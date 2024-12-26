@@ -203,8 +203,8 @@ def submit_path():
 
     current_file = 0
     files = []
-    resources_exists()
     path = filedialog.askdirectory()+'/'
+    resources_exists()
     invalid = 0
     if os.path.exists(path):
         duplicates = {}
@@ -274,10 +274,9 @@ def resources_exists():
 window = Tk()
 window.geometry('350x450')
 window.title('Media Tags')
-window.resizable(False, False)
 window['background'] = '#a0a0a0'
 
-path = 'C:/'
+path = ''
 resources_folder = 'MediaTags Resources/'
 tags_file = '_tags_list.txt'
 temp_frame = '_first_frame.png'
