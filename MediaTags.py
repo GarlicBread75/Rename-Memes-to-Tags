@@ -6,6 +6,9 @@ import cv2 as cv
 import os
 
 
+# remove dupe tags at end if '_0'
+# clear 'invalid_files.txt' on startup
+
 def add_tag():
     global input_tag, info_box, options, full_name, drop, tags_file
 
