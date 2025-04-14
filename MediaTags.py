@@ -1,13 +1,10 @@
 ﻿from tkinter import *
-from PIL import *
 from tkinter import ttk, filedialog
+from PIL import *
 from PIL import Image, ImageTk
 import cv2 as cv
 import os
-
-
-# remove dupe tags at end if '_0'
-# clear 'invalid_files.txt' on startup
+import simplejson as j
 
 def add_tag():
     global input_tag, info_box, options, full_name, drop, tags_file
@@ -75,7 +72,8 @@ def change_file():
             duplicates[new_name+extension] += 1   
 
 def finished():
-    global submit, next_file, insert, drop, input_tag, path, info_box, file_name, preview, duplicates
+    global submit, next_file, insert, drop, input_tag, path, info_box, file_name
+    global drop_text, file_numbering_text, input_tag_text, preview
 
     preview['image'] = ''
     preview.grid(row = 5, column = 0, columnspan = 3, padx = 10, pady = 10, sticky = N+S+E+W)
@@ -87,6 +85,14 @@ def finished():
     submit['text'] = 'Choose Folder'
     info_box['text'] = 'Finished!'
     file_name['text'] = ''
+    input_tag_text['text'] = '      Choose'
+    file_numbering_text['text'] = '           a'
+    drop_text['text'] = '       Folder'
+    undupe_notdupes()
+
+def undupe_notdupes():
+    for file in os.listdir(path):
+        os.rename(path+file, path+file.replace(' _0', ''))
 
 def set_image_and_size(file):
     global info_box, img, path, files, current_file, files_count, info_box
@@ -105,7 +111,8 @@ def set_image_and_size(file):
             dot = files[current_file].rfind('.')
             ext = files[current_file][dot:]
 
-    if not files_left: return 1, 1
+    if not files_left:
+        return 1, 1
 
     if ext in ['.png', '.gif']:
         img = Image.open(path+files[current_file])
@@ -138,12 +145,12 @@ def set_image_and_size(file):
     return x, y
 
 def is_valid(file):
-    global tags_file, temp_frame, invalid_list, duplicates_json
+    global tags_file, temp_frame, invalid_list
 
     dot = file.rfind('.')
     ext = file[dot:]
     valid_file = ext in ['.png', '.gif', '.mp4', '.jpg', '.bmp', '.jpeg', '.webp', '.avi', '.mov', '.mkv', '.webm']
-    not_resources = file not in [tags_file, temp_frame, invalid_list, duplicates_json]
+    not_resources = file not in [tags_file, temp_frame, invalid_list]
     return valid_file and not_resources
 
 def add_tag_from_list():
@@ -200,14 +207,16 @@ def recalculate_dupes(original_filename, filename, ext):
         duplicates[filename] = 1
 
 def submit_path():
-    global input_tag, submit, info_box, img, width, height, resized, preview, next_file
-    global files_count, files, insert, file_name, temp_txt, path, current_file
-    global duplicates, tags_file, duplicates_json, options, drop, duplicates
+    global input_tag, submit, info_box, img, width, height, resized, preview, next_file, drop_text
+    global files_count, files, insert, file_name, temp_txt, path, current_file, input_tag_text
+    global duplicates, tags_file, options, drop, file_numbering_text
 
     current_file = 0
     files = []
     path = filedialog.askdirectory()+'/'
     resources_exists()
+    if os.path.exists(path+resources_folder+invalid_list):
+        os.remove(path+resources_folder+invalid_list)
     invalid = 0
     if os.path.exists(path):
         duplicates = {}
@@ -242,6 +251,9 @@ def submit_path():
             file_numbering['text'] = f'{current_file+1}/{files_count}'
             drop['state'] = 'readonly'
             file_name['text'] = files[current_file]
+            input_tag_text['text'] = 'Add tags here:'
+            file_numbering_text['text'] = 'Current file:'
+            drop_text['text'] = 'Tags list:'
 
             if os.path.exists(path+resources_folder+tags_file):
                 for line in open(path+resources_folder+tags_file, 'r').readlines():
@@ -264,6 +276,7 @@ def submit_path():
                 info_box['text'] = 'No valid files in path!!!'
             else:
                 info_box['text'] = 'No valid files in path!'
+        # write duplicates to json
 
 def resources_exists():
     if os.path.exists(path+resources_folder):
@@ -284,7 +297,6 @@ resources_folder = 'MediaTags Resources/'
 tags_file = '_tags_list.txt'
 temp_frame = '_first_frame.png'
 invalid_list = '_invalid_files.txt'
-duplicates_json = '_duplicates.json'
 duplicates = {}
 files = []
 files_count = 0
@@ -300,7 +312,8 @@ resized = Image.new
 preview = Label(window, bg = '#804080')
 preview.grid(row = 5, column = 0, columnspan = 3, padx = 10, pady = 10, sticky = N+S+E+W)
 
-input_tag_text = Label(window, text = 'Add tags here:', bg = '#a0a0a0').grid(row = 1, column = 0, sticky = 'w', padx = 5)
+input_tag_text = Label(window, text = '      Choose', bg = '#a0a0a0')
+input_tag_text.grid(row = 1, column = 0, sticky = 'w', padx = 5)
 full_name = []
 input_tag = Entry(window, state = 'disabled')
 input_tag.grid(row = 1, column = 1, sticky = N+S+E+W)
@@ -310,11 +323,13 @@ next_file.grid(row = 2, column = 2, sticky = N+S+E+W, padx = 5)
 
 options = ['']
     
-file_numbering_text = Label(window, text = 'Current file:', bg = '#a0a0a0').grid(row = 2, column = 0, sticky = 'w', padx = 5)
+file_numbering_text = Label(window, text = '           a', bg = '#a0a0a0')
+file_numbering_text.grid(row = 2, column = 0, sticky = 'w', padx = 5)
 file_numbering = Label(bg = '#a0a0a0')
 file_numbering.grid(row = 2, column = 1, sticky = N+S+E+W)
 
-drop_text = Label(window, text = 'Tags list:', bg = '#a0a0a0').grid(row = 3, column = 0, sticky = 'w', padx = 5)
+drop_text = Label(window, text = '       Folder', bg = '#a0a0a0')
+drop_text.grid(row = 3, column = 0, sticky = 'w', padx = 5)
 drop = ttk.Combobox(master = window, values = options, state = 'disabled')
 drop.grid(row = 3, column = 1, sticky = N+S+E+W)
 
