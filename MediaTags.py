@@ -4,7 +4,6 @@ from PIL import *
 from PIL import Image, ImageTk
 import cv2 as cv
 import os
-import simplejson as j
 
 def add_tag():
     global input_tag, info_box, options, full_name, drop, tags_file
@@ -150,7 +149,7 @@ def is_valid(file):
     dot = file.rfind('.')
     ext = file[dot:]
     valid_file = ext in ['.png', '.gif', '.mp4', '.jpg', '.bmp', '.jpeg', '.webp', '.avi', '.mov', '.mkv', '.webm']
-    not_resources = file not in [tags_file, temp_frame, files_list]
+    not_resources = file not in [tags_file, temp_frame, invalid_files]
     return valid_file and not_resources
 
 def add_tag_from_list():
@@ -215,8 +214,8 @@ def submit_path():
     files = []
     path = filedialog.askdirectory()+'/'
     resources_exists()
-    if os.path.exists(path+resources_folder+files_list):
-        os.remove(path+resources_folder+files_list)
+    if os.path.exists(path+resources_folder+invalid_files):
+        os.remove(path+resources_folder+invalid_files)
     invalid = 0
     if os.path.exists(path):
         duplicates = {}
@@ -237,10 +236,9 @@ def submit_path():
                     else:
                         recalculate_dupes(file, file, extension)
                     files_count += 1
-                    filelist[file] = 'valid'
                 else:
-                    invalid += 1
-                    filelist[file] = 'invalid'
+                    with open(path+resources_folder+invalid_files, 'a') as invalids:
+                        invalids.write(file+'\n')
 
         if files_count > 0:
             submit['command'] = add_tag
@@ -276,8 +274,6 @@ def submit_path():
                 info_box['text'] = 'No valid files in path!!!'
             else:
                 info_box['text'] = 'No valid files in path!'
-    with open(path+resources_folder+files_list, 'w') as js:
-        js.write(j.dumps(filelist, indent = 4))
 
 def resources_exists():
     if os.path.exists(path+resources_folder):
@@ -297,8 +293,7 @@ path = ''
 resources_folder = 'MediaTags Resources/'
 tags_file = '_tags_list.txt'
 temp_frame = '_first_frame.png'
-files_list = '_files_list.json'
-filelist = {}
+invalid_files = '_invalid_files.txt'
 duplicates = {}
 files = []
 files_count = 0
