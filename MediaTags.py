@@ -145,12 +145,12 @@ def set_image_and_size(file):
     return x, y
 
 def is_valid(file):
-    global tags_file, temp_frame, invalid_list
+    global tags_file, temp_frame, files_list
 
     dot = file.rfind('.')
     ext = file[dot:]
     valid_file = ext in ['.png', '.gif', '.mp4', '.jpg', '.bmp', '.jpeg', '.webp', '.avi', '.mov', '.mkv', '.webm']
-    not_resources = file not in [tags_file, temp_frame, invalid_list]
+    not_resources = file not in [tags_file, temp_frame, files_list]
     return valid_file and not_resources
 
 def add_tag_from_list():
@@ -215,8 +215,8 @@ def submit_path():
     files = []
     path = filedialog.askdirectory()+'/'
     resources_exists()
-    if os.path.exists(path+resources_folder+invalid_list):
-        os.remove(path+resources_folder+invalid_list)
+    if os.path.exists(path+resources_folder+files_list):
+        os.remove(path+resources_folder+files_list)
     invalid = 0
     if os.path.exists(path):
         duplicates = {}
@@ -237,10 +237,10 @@ def submit_path():
                     else:
                         recalculate_dupes(file, file, extension)
                     files_count += 1
+                    filelist[file] = 'valid'
                 else:
                     invalid += 1
-                    with open(path+resources_folder+invalid_list, 'a') as not_valid:
-                        not_valid.write(file+'\n')
+                    filelist[file] = 'invalid'
 
         if files_count > 0:
             submit['command'] = add_tag
@@ -276,7 +276,8 @@ def submit_path():
                 info_box['text'] = 'No valid files in path!!!'
             else:
                 info_box['text'] = 'No valid files in path!'
-        # write duplicates to json
+    with open(path+resources_folder+files_list, 'w') as js:
+        js.write(j.dumps(filelist, indent = 4))
 
 def resources_exists():
     if os.path.exists(path+resources_folder):
@@ -296,7 +297,8 @@ path = ''
 resources_folder = 'MediaTags Resources/'
 tags_file = '_tags_list.txt'
 temp_frame = '_first_frame.png'
-invalid_list = '_invalid_files.txt'
+files_list = '_files_list.json'
+filelist = {}
 duplicates = {}
 files = []
 files_count = 0
